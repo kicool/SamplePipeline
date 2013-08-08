@@ -1,3 +1,5 @@
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.commons.pipeline.StageException;
 import org.apache.commons.pipeline.stage.BaseStage;
 
@@ -9,6 +11,8 @@ import org.apache.commons.pipeline.stage.BaseStage;
  * To change this template use File | Settings | File Templates.
  */
 public class MyLogStage extends BaseStage {
+    private final Log log = LogFactory.getLog(MyLogStage.class);
+
     String s;
 
     public MyLogStage(String s) {
@@ -17,7 +21,7 @@ public class MyLogStage extends BaseStage {
 
     @Override
     public void process(Object obj) throws StageException {
-        System.out.println(s + " Processing object:<" + obj.getClass().getCanonicalName() + "> " + obj);
-        this.emit(obj);
+        super.process(obj);
+        log.info(s + " Processing object:<" + obj.getClass().getCanonicalName() + "> " + obj);
     }
 }

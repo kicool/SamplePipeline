@@ -13,8 +13,10 @@ import java.security.MessageDigest;
  * Time: 5:59 PM
  * To change this template use File | Settings | File Templates.
  */
-public class InputStreamHashStage extends BaseStage {
-    private final Log log = LogFactory.getLog(InputStreamHashStage.class);
+public class InputStreamHashStage extends BranchBaseStage {
+    static {
+        log = LogFactory.getLog(InputStreamHashStage.class);
+    }
 
     private static final int BUF_SIZE = 1024;
 
@@ -25,12 +27,18 @@ public class InputStreamHashStage extends BaseStage {
      */
     public InputStreamHashStage(String algorithm) {
         this.algorithm = algorithm;
+        addBranch(algorithm);
     }
 
     public void process(Object obj) throws org.apache.commons.pipeline.StageException {
+        super.process(obj);
+
         if (obj instanceof InputStream) {
             InputStream is = (InputStream) obj;
+
             try {
+                is.reset();
+
                 MessageDigest md = MessageDigest.getInstance(algorithm);
 
                 byte[] dataBytes = new byte[BUF_SIZE];
@@ -51,7 +59,7 @@ public class InputStreamHashStage extends BaseStage {
 
                 String digest = sb.toString();
                 log.info("Digest " + algorithm + " (in hex format):: " + digest);
-                this.emit(digest);
+                emitToBranches(digest);
             } catch (Exception e) {
                 throw new StageException(this, e);
             }

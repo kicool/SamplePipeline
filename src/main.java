@@ -1,6 +1,7 @@
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.pipeline.Pipeline;
+import org.apache.commons.pipeline.driver.SynchronousStageDriverFactory;
 import org.apache.commons.pipeline.driver.ThreadPoolStageDriverFactory;
 import org.apache.commons.pipeline.stage.HttpFileDownloadStage;
 import org.apache.commons.pipeline.stage.LogStage;
@@ -21,7 +22,7 @@ public class main {
         String url = "http://mobiledev.englishtown.com/services/school/query?q=activity!88750.activityContent";
         String workdir = "/Users/kicoolzhang/Repos/workdir";
 
-        SimplePipeline2(url, workdir);
+        PipelineBranch(url, workdir);
     }
 
     private static void SimplePipeline(String url, String workdir) {
@@ -82,6 +83,46 @@ public class main {
             pipeline.finish();
 
             // StageDriver stageDriver = factory.createStageDriver(s, pipeline);
+            //stageDriver.getFeeder().feed(url);
+            //stageDriver.start();
+            //stageDriver.finish();
+        } catch (Exception e) {
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+        }
+
+        log.info("88.");
+    }
+
+    private static void PipelineBranch(String url, String workdir) {
+        SynchronousStageDriverFactory factory = new SynchronousStageDriverFactory();
+
+        Pipeline pipeline = new Pipeline();
+        Pipeline pipelineBranchInputStream = new Pipeline();
+
+        log.info("OK.");
+
+        try {
+            pipeline.addBranch("InputStream", pipelineBranchInputStream);
+            pipelineBranchInputStream.addStage(new InputStreamHashStage("MD5"), factory);
+            pipelineBranchInputStream.addStage(new InputStreamToJsonObjStage(), factory);
+            pipelineBranchInputStream.addStage(new InputStreamToFileStage(workdir), factory);
+
+
+            pipeline.addStage(new URLToInputStreamStage(), factory);
+            pipeline.addStage(new MarkInputStreamStage(), factory);
+            pipeline.addStage(new MyLogStage("M1"), factory);
+            pipeline.addStage(new BranchStage("InputStream"), factory);
+            pipeline.addStage(new MyLogStage("M2"), factory);
+
+            pipeline.setTerminalFeeder(new TFeeder());
+
+            pipeline.start();
+
+            pipeline.getSourceFeeder().feed(url);
+
+            pipeline.finish();
+
+            //StageDriver stageDriver = factory.createStageDriver(s, pipeline);
             //stageDriver.getFeeder().feed(url);
             //stageDriver.start();
             //stageDriver.finish();
