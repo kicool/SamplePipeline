@@ -1,6 +1,11 @@
+import functor.CloneInputStream;
+import functor.Contants;
 import org.apache.commons.logging.LogFactory;
+import org.apache.commons.pipeline.StageException;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
 
 /**
  * Created with IntelliJ IDEA.
@@ -11,10 +16,8 @@ import java.io.*;
  */
 public class InputStreamToFileStage extends BranchBaseStage {
     static {
-        log = LogFactory.getLog(BranchStage.class);
+        log = LogFactory.getLog(BranchStage.class.getSimpleName());
     }
-
-    private static final int BUF_SIZE = 1024;
 
     private String workdir;
 
@@ -35,48 +38,37 @@ public class InputStreamToFileStage extends BranchBaseStage {
     public void process(Object obj) throws org.apache.commons.pipeline.StageException {
         super.process(obj);
 
-        if (obj instanceof InputStream) {
-            InputStream is = (InputStream) obj;
-            if (is instanceof BufferedInputStream) {
-                try {
-                    is.reset();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    log.error("Abort:", e);
-                    return;
-                }
+        InputStream is = null;
+        try {
+            if (obj instanceof InputStream) {
+
+                is = (InputStream) obj;
+                is.reset();
+
+
+            } else if (obj instanceof CloneInputStream) {
+
+                is = (InputStream) ((CloneInputStream) obj).call();
+
             } else {
-                log.error("No reset()!");
+                throw new StageException(this);
             }
 
             FileOutputStream fos;
             File f = genFile();
 
-            try {
-                fos = new FileOutputStream(f);
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-                log.error("Abort:", e);
-                return;
-            }
+            fos = new FileOutputStream(f);
 
             int read = 0;
-            byte[] bytes = new byte[BUF_SIZE];
-
-            try {
-                while ((read = is.read(bytes)) != -1) {
-                    fos.write(bytes, 0, read);
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-                log.error("Abort:", e);
-                return;
+            byte[] bytes = new byte[Contants.BUF_SIZE];
+            while ((read = is.read(bytes)) != -1) {
+                fos.write(bytes, 0, read);
             }
 
             log.info("InputStream to file:" + f.getAbsolutePath());
             emitToBranches(f);
-        } else {
-            log.error("Invalid object type:" + obj.getClass().getSimpleName());
+        } catch (Exception e) {
+            throw new StageException(this, e);
         }
     }
 }

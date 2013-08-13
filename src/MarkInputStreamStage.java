@@ -14,7 +14,7 @@ import java.io.InputStream;
  * To change this template use File | Settings | File Templates.
  */
 public class MarkInputStreamStage extends BaseStage {
-    private final Log log = LogFactory.getLog(MarkInputStreamStage.class);
+    private final Log log = LogFactory.getLog(MarkInputStreamStage.class.getSimpleName());
 
     @Override
     public void process(Object obj) throws StageException {

@@ -1,12 +1,10 @@
-import org.apache.commons.logging.Log;
+import functor.CloneInputStream;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.pipeline.StageException;
-import org.apache.commons.pipeline.stage.BaseStage;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
-import java.io.IOException;
 import java.io.InputStream;
 
 /**
@@ -18,7 +16,7 @@ import java.io.InputStream;
  */
 public class InputStreamToJsonObjStage extends BranchBaseStage {
     static {
-        log = LogFactory.getLog(InputStreamToJsonObjStage.class);
+        log = LogFactory.getLog(InputStreamToJsonObjStage.class.getSimpleName());
     }
 
     public static final String KEY_TEMPLATE_CODE = "templateCode";
@@ -31,28 +29,33 @@ public class InputStreamToJsonObjStage extends BranchBaseStage {
     public void process(Object obj) throws StageException {
         super.process(obj);
 
-        if (obj instanceof InputStream) {
-            InputStream is = (InputStream) obj;
+        InputStream is = null;
+        try {
+            if (obj instanceof InputStream) {
 
-            try {
+                is = (InputStream) obj;
                 is.reset();
 
-                JSONTokener jsonTokener = new JSONTokener(is);
-                JSONArray json = new JSONArray(jsonTokener);
-                for (int i = 0; i < json.length(); ++i) {
-                    JSONObject jsonObject = json.getJSONObject(i);
-                    String template = jsonObject.optString(KEY_TEMPLATE_CODE);
-                    if (template != null && template.length() > 0) {
-                        emitToBranches(template);
-                        return;
-                    }
-                }
-            } catch (IOException e) {
-                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            } else if (obj instanceof CloneInputStream) {
+
+                is = (InputStream) ((CloneInputStream) obj).call();
+
+            } else {
+                throw new StageException(this);
             }
 
-        } else {
-            log.error("Invalid object type:" + obj.getClass().getSimpleName());
+            JSONTokener jsonTokener = new JSONTokener(is);
+            JSONArray json = new JSONArray(jsonTokener);
+            for (int i = 0; i < json.length(); ++i) {
+                JSONObject jsonObject = json.getJSONObject(i);
+                String template = jsonObject.optString(KEY_TEMPLATE_CODE);
+                if (template != null && template.length() > 0) {
+                    emitToBranches(template);
+                    return;
+                }
+            }
+        } catch (Exception e) {
+            throw new StageException(this, e);
         }
     }
 }

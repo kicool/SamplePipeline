@@ -14,7 +14,7 @@ import java.util.Map;
  * To change this template use File | Settings | File Templates.
  */
 public abstract class BranchBaseStage extends BaseStage {
-    protected static Log log = LogFactory.getLog(BranchBaseStage.class);
+    protected static Log log = LogFactory.getLog(BranchBaseStage.class.getSimpleName());
 
     protected ArrayList<String> branches;
 

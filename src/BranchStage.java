@@ -10,7 +10,7 @@ import org.apache.commons.pipeline.StageException;
  */
 public final class BranchStage extends BranchBaseStage {
     static {
-        log = LogFactory.getLog(BranchStage.class);
+        log = LogFactory.getLog(BranchStage.class.getSimpleName());
     }
 
     public BranchStage(String branch) {

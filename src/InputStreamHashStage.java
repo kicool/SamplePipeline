@@ -1,10 +1,8 @@
-import org.apache.commons.logging.Log;
+import functor.CloneInputStream;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.pipeline.StageException;
-import org.apache.commons.pipeline.stage.BaseStage;
 
 import java.io.InputStream;
-import java.security.MessageDigest;
 
 /**
  * Created with IntelliJ IDEA.
@@ -15,10 +13,8 @@ import java.security.MessageDigest;
  */
 public class InputStreamHashStage extends BranchBaseStage {
     static {
-        log = LogFactory.getLog(InputStreamHashStage.class);
+        log = LogFactory.getLog(InputStreamHashStage.class.getSimpleName());
     }
-
-    private static final int BUF_SIZE = 1024;
 
     private final String algorithm;
 
@@ -33,36 +29,31 @@ public class InputStreamHashStage extends BranchBaseStage {
     public void process(Object obj) throws org.apache.commons.pipeline.StageException {
         super.process(obj);
 
-        if (obj instanceof InputStream) {
-            InputStream is = (InputStream) obj;
+        InputStream is = null;
+        try {
+            if (obj instanceof InputStream) {
 
-            try {
+                is = (InputStream) obj;
                 is.reset();
 
-                MessageDigest md = MessageDigest.getInstance(algorithm);
 
-                byte[] dataBytes = new byte[BUF_SIZE];
+            } else if (obj instanceof CloneInputStream) {
 
-                int nread = 0;
-                while ((nread = is.read(dataBytes)) != -1) {
-                    md.update(dataBytes, 0, nread);
-                }
+                is = (InputStream) ((CloneInputStream) obj).call();
 
-                byte[] mdbytes = md.digest();
-
-                // convert the byte to hex format
-                StringBuffer sb = new StringBuffer("");
-                for (int i = 0; i < mdbytes.length; i++) {
-                    sb.append(Integer.toString((mdbytes[i] & 0xff) + 0x100, 16)
-                            .substring(1));
-                }
-
-                String digest = sb.toString();
-                log.info("Digest " + algorithm + " (in hex format):: " + digest);
-                emitToBranches(digest);
-            } catch (Exception e) {
-                throw new StageException(this, e);
+            } else {
+                throw new StageException(this);
             }
+
+            if (is != null) {
+                String digest = (String) (new functor.InputStreamToHash(is, algorithm).call());
+
+                log.info("Digest " + algorithm + " (in hex format):: " + digest);
+
+                emitToBranches(digest);
+            }
+        } catch (Exception e) {
+            throw new StageException(this, e);
         }
     }
 }
