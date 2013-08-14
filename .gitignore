@@ -3,3 +3,7 @@ out
 build
 .gradle
 gradle*
+*.class
+*.jar
+*.war
+*.ear
